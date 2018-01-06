@@ -8,7 +8,7 @@ install:
 
 .PHONY: build
 build:
-	go build -o bin/darwin/$(APP) ./cmd
+	go build -o bin/darwin/$(APP) ./cmd/$(APP)
 
 .PHONY: test
 test: test-units test-integration
@@ -20,15 +20,6 @@ test-units:
 .PHONY: test-integration
 test-integration:
 	@echo "integration tests should start"
-
-
-.PHONY: start
-start:
-	./bin/darwin/$(APP) & echo $! > $(APP).pid
-
-.PHONY: stop
-stop:
-	cat $(APP).pid | kill -9
 
 .PHONY: clean
 clean:

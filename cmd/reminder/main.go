@@ -8,9 +8,16 @@ import (
 )
 
 func main() {
-	app, err := reminder.NewApp()
+	// read configuration
+	conf, err := reminder.NewConf()
 	if err != nil {
-		log.Fatalf(`failed to start application`, err)
+		log.Fatal(err)
 	}
+	// create app
+	app, err := reminder.NewApp(conf)
+	if err != nil {
+		log.Fatalf(`failed to start application: %s`, err)
+	}
+	// run app
 	os.Exit(app.Run())
 }

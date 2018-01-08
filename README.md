@@ -41,14 +41,6 @@ All artifacts are placed inside `/bin/<platform>/` directory. Supported platform
 
     make test
 
-## Start reminder service
-
-    make start
-
-## Stop reminder service
-
-    make stop
-
 ## Clear environment
 
     make clean

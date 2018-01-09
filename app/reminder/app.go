@@ -1,91 +1,46 @@
 package reminder
 
 import (
-	"bytes"
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
-	"strings"
-	"sync"
-	"time"
+
+	"github.com/filatovw/collectai/app/reminder/engine"
 )
 
 type App struct {
-	Conf *Conf
+	Conf      *Conf
+	schedule  [][]string
+	scheduler engine.Engine
 }
 
-func (a *App) Run() int {
+func (a *App) Run() (exitcode int) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Print(r)
+			exitcode = 2
+		}
+	}()
+	// TODO: init ctrl+v cancellation
+
 	// read schedule
-	v, err := readCSV(a.Conf.SchedulePath)
+	err := a.readCSV()
 	if err != nil {
 		log.Printf(`failed to read CSV: %s`, err)
+		return 1
 	}
-	a.setupScheduler(v)
+	if err := a.scheduler.Init(a.schedule, a.Conf.CommserviceHost); err != nil {
+		log.Printf(`failed to Init engine: %s`, err)
+	}
+	cancel := make(chan struct{})
+	a.scheduler.Process(cancel)
+
 	return 0
 }
 
-type Person struct {
-	Email string `json:"email"`
-	Text  string `json:"text"`
-}
-
-func (a App) setupScheduler(data [][]string) {
-	wg := sync.WaitGroup{}
-	for _, item := range data {
-		timestamps := strings.Split(item[2], "-")
-		stop := make(chan struct{})
-		person := &Person{
-			Email: item[0],
-			Text:  item[1],
-		}
-		for _, ts := range timestamps {
-			dur, err := time.ParseDuration(ts)
-			if err != nil {
-				log.Printf("%v %v", err, ts)
-			}
-			timer := time.NewTimer(dur)
-
-			wg.Add(1)
-			go func(email, message string, timer *time.Timer, stop chan struct{}) {
-				defer wg.Done()
-				select {
-				case <-timer.C:
-					log.Printf("notified person:%s;  message: %s", email, message)
-					body, err := json.Marshal(person)
-					if err != nil {
-						log.Printf(`failed to serialize: %s`, person)
-						return
-					}
-					resp, err := http.Post("http://"+a.Conf.CommserviceHost+"/messages", "application/json", bytes.NewBuffer(body))
-					if err != nil {
-						log.Printf(`failed to read response: %s`, err)
-						return
-					}
-					defer resp.Body.Close()
-					body, err = ioutil.ReadAll(resp.Body)
-					if err != nil {
-						log.Printf(`failed to read response body: %s`, err)
-					}
-					var vv interface{}
-					json.Unmarshal(body, vv)
-					log.Printf("body :%v", vv)
-
-				case <-stop:
-					log.Printf("stopped person: %s", email)
-					timer.Stop()
-				}
-			}(item[0], item[1], timer, stop)
-		}
-	}
-	wg.Wait()
-}
-
-func readCSV(path string) ([][]string, error) {
-	csvfile, err := os.Open(path)
+func (a *App) readCSV() error {
+	csvfile, err := os.Open(a.Conf.SchedulePath)
 	if err != nil {
 		log.Printf(`failed to open file with the schedule: %s`, err)
 	}
@@ -96,16 +51,22 @@ func readCSV(path string) ([][]string, error) {
 	r.Comment = '#'
 	all, err := r.ReadAll()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if len(all) > 1 {
-		return all[1:], nil
+		a.schedule = all[1:]
+		return nil
 	}
-	return nil, fmt.Errorf(`empty CSV file: %s`, path)
+	return fmt.Errorf(`empty CSV file: %s`, a.Conf.SchedulePath)
 }
 
 func NewApp(conf *Conf) (*App, error) {
+	engine, err := engine.GetEngine(conf.Engine)
+	if err != nil {
+		return nil, fmt.Errorf(`failed to create Application: %s`, err)
+	}
 	return &App{
-		Conf: conf,
+		Conf:      conf,
+		scheduler: engine,
 	}, nil
 }

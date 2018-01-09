@@ -4,7 +4,7 @@ The Challenge
 
 Your task is to build an app which reads customer data from a CSV file (customers.csv) and sends out reminders of unsettled invoices based on the specified schedule. 
 The schedule's values are offsets relative to the first message being sent. 
-To send a message make a POST request to the commservice's /messages endpoint. 
+To send a message make a POST request to the commservice's `/messages` endpoint. 
 It expects the message to be JSON encoded in the request body and contain the customer's email and message's text, e.g. look like
 
 ```{.json}

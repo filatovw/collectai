@@ -22,8 +22,6 @@ func (a *App) Run() (exitcode int) {
 			exitcode = 2
 		}
 	}()
-	// TODO: init ctrl+v cancellation
-
 	// read schedule
 	err := a.readCSV()
 	if err != nil {

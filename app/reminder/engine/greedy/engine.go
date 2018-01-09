@@ -68,7 +68,7 @@ func (e *Engine) Init(input [][]string, host string) error {
 func (e Engine) Process(stop chan<- struct{}) error {
 	wg := &sync.WaitGroup{}
 	endpoint := fmt.Sprintf("http://%s/messages", e.host)
-	log.Printf(`endpoint is :%s`, endpoint)
+	log.Printf(`endpoint is: %s`, endpoint)
 	for _, data := range e.data {
 		cancel := make(chan struct{})
 		body, err := json.Marshal(data.meta)

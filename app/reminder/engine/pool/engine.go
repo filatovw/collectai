@@ -27,6 +27,6 @@ func (e *Engine) Init(data [][]string, host string) error {
 	return nil
 }
 
-func (e Engine) Process(cancel chan<- struct{}) error {
+func (e Engine) Process() error {
 	return nil
 }

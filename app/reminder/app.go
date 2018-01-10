@@ -9,12 +9,14 @@ import (
 	"github.com/filatovw/collectai/app/reminder/engine"
 )
 
+// App application object
 type App struct {
 	Conf      *Conf
 	schedule  [][]string
 	scheduler engine.Engine
 }
 
+// Run start application
 func (a *App) Run() (exitcode int) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -22,21 +24,27 @@ func (a *App) Run() (exitcode int) {
 			exitcode = 2
 		}
 	}()
+
 	// read schedule
 	err := a.readCSV()
 	if err != nil {
 		log.Printf(`failed to read CSV: %s`, err)
 		return 1
 	}
-	if err := a.scheduler.Init(a.schedule, a.Conf.CommserviceHost); err != nil {
+	// init scheduler
+	if err = a.scheduler.Init(a.schedule, a.Conf.CommserviceHost); err != nil {
 		log.Printf(`failed to Init engine: %s`, err)
+		return 1
 	}
-	cancel := make(chan struct{})
-	a.scheduler.Process(cancel)
-
+	// process notification
+	if err = a.scheduler.Process(); err != nil {
+		log.Printf(`failed to Init engine: %s`, err)
+		return 1
+	}
 	return 0
 }
 
+// readCSV read csv file
 func (a *App) readCSV() error {
 	csvfile, err := os.Open(a.Conf.SchedulePath)
 	if err != nil {
@@ -48,6 +56,7 @@ func (a *App) readCSV() error {
 	r.TrimLeadingSpace = true
 	r.Comment = '#'
 	all, err := r.ReadAll()
+
 	if err != nil {
 		return err
 	}
@@ -58,6 +67,7 @@ func (a *App) readCSV() error {
 	return fmt.Errorf(`empty CSV file: %s`, a.Conf.SchedulePath)
 }
 
+// NewApp configures application
 func NewApp(conf *Conf) (*App, error) {
 	engine, err := engine.GetEngine(conf.Engine)
 	if err != nil {

@@ -16,11 +16,13 @@ const (
 	CTYPE_JSON = "application/json"
 )
 
+// Engine implements Engine interface
 type Engine struct {
-	data []User
-	host string
+	data []User // user data with offsets
+	host string // connservice host
 }
 
+// Meta represents all we know about the notified person
 type Meta struct {
 	Email string `json:"email"`
 	Text  string `josn:"text"`
@@ -35,6 +37,7 @@ type User struct {
 	meta    *Meta
 }
 
+// Init reads initial CSV data and parse offsets
 func (e *Engine) Init(input [][]string, host string) error {
 	e.host = host
 	data := []User{}
@@ -65,7 +68,8 @@ func (e *Engine) Init(input [][]string, host string) error {
 	return nil
 }
 
-func (e Engine) Process(stop chan<- struct{}) error {
+// Process starts goroutines. One for each time offset.
+func (e Engine) Process() error {
 	wg := &sync.WaitGroup{}
 	endpoint := fmt.Sprintf("http://%s/messages", e.host)
 	log.Printf(`endpoint is: %s`, endpoint)
@@ -114,10 +118,8 @@ func (e Engine) notify(cancel chan struct{}, wg *sync.WaitGroup, ts time.Duratio
 				close(cancel)
 			}
 		}
-	case _, ok := <-cancel:
-		if !ok {
-			log.Printf(`notification cancelled %s`, body)
-			timer.Stop()
-		}
+	case <-cancel:
+		timer.Stop()
+		log.Printf(`notification cancelled %s`, body)
 	}
 }

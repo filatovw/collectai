@@ -9,15 +9,19 @@ import (
 
 // scheduler engines
 const (
-	ENGINE_POOL   = "pool"
+	// `pool` engine creates a pool of goroutines. Helps to utilize resources much more efficiently.
+	ENGINE_POOL = "pool"
+	// `greedy` engine creates number of goroutines equals to the number of offsets from the `schedule` column.
 	ENGINE_GREEDY = "greedy"
 )
 
+// Engine interface for a scheduler
 type Engine interface {
 	Init([][]string, string) error
-	Process(chan<- struct{}) error
+	Process() error
 }
 
+// GetEngine gives scheduler engine
 func GetEngine(engine string) (Engine, error) {
 	switch engine {
 	case ENGINE_POOL:

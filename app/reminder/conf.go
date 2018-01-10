@@ -8,10 +8,11 @@ import (
 	"github.com/filatovw/collectai/app/reminder/engine"
 )
 
+// Conf configuration container
 type Conf struct {
-	CommserviceHost string
-	SchedulePath    string
-	Engine          string
+	CommserviceHost string // commservice host [host]:[port]
+	SchedulePath    string // path to schedule file
+	Engine          string // scheduler engine
 }
 
 func (c Conf) isReady() bool {

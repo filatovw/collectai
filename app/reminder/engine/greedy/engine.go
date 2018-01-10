@@ -3,6 +3,7 @@ package greedy
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -39,6 +40,12 @@ type User struct {
 
 // Init reads initial CSV data and parse offsets
 func (e *Engine) Init(input [][]string, host string) error {
+	if len(input) == 0 {
+		return errors.New("empty input")
+	}
+	if strings.TrimSpace(host) == "" {
+		return errors.New("empty host is not allowed")
+	}
 	e.host = host
 	data := []User{}
 	for i, item := range input {

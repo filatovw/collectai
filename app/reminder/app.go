@@ -11,7 +11,7 @@ import (
 
 // App application object
 type App struct {
-	Conf      *Conf
+	conf      *Conf
 	schedule  [][]string
 	scheduler engine.Engine
 }
@@ -32,7 +32,7 @@ func (a *App) Run() (exitcode int) {
 		return 1
 	}
 	// init scheduler
-	if err = a.scheduler.Init(a.schedule, a.Conf.CommserviceHost); err != nil {
+	if err = a.scheduler.Init(a.schedule, a.conf.CommserviceHost); err != nil {
 		log.Printf(`failed to Init engine: %s`, err)
 		return 1
 	}
@@ -46,10 +46,12 @@ func (a *App) Run() (exitcode int) {
 
 // readCSV read csv file
 func (a *App) readCSV() error {
-	csvfile, err := os.Open(a.Conf.SchedulePath)
+	csvfile, err := os.Open(a.conf.SchedulePath)
 	if err != nil {
 		log.Printf(`failed to open file with the schedule: %s`, err)
 	}
+	defer csvfile.Close()
+
 	r := csv.NewReader(csvfile)
 	r.Comma = ','
 	r.LazyQuotes = true
@@ -64,7 +66,7 @@ func (a *App) readCSV() error {
 		a.schedule = all[1:]
 		return nil
 	}
-	return fmt.Errorf(`empty CSV file: %s`, a.Conf.SchedulePath)
+	return fmt.Errorf(`empty CSV file: %s`, a.conf.SchedulePath)
 }
 
 // NewApp configures application
@@ -74,7 +76,7 @@ func NewApp(conf *Conf) (*App, error) {
 		return nil, fmt.Errorf(`failed to create Application: %s`, err)
 	}
 	return &App{
-		Conf:      conf,
+		conf:      conf,
 		scheduler: engine,
 	}, nil
 }

@@ -23,6 +23,11 @@ type Engine struct {
 	host string // connservice host
 }
 
+// Data is a getter for engine data
+func (e Engine) Data() []User {
+	return e.data
+}
+
 // Meta represents all we know about the notified person
 type Meta struct {
 	Email string `json:"email"`
@@ -34,8 +39,8 @@ type messagesResponse struct {
 }
 
 type User struct {
-	offsets []time.Duration
-	meta    *Meta
+	Offsets []time.Duration
+	Meta    Meta
 }
 
 // Init reads initial CSV data and parse offsets
@@ -43,12 +48,16 @@ func (e *Engine) Init(input [][]string, host string) error {
 	if len(input) == 0 {
 		return errors.New("empty input")
 	}
+	if len(input[0]) != 3 {
+		return fmt.Errorf("wrong number of columns")
+	}
 	if strings.TrimSpace(host) == "" {
 		return errors.New("empty host is not allowed")
 	}
 	e.host = host
 	data := []User{}
 	for i, item := range input {
+		item[2] = strings.Trim(item[2], "-")
 		timestamps := strings.Split(item[2], "-")
 		offsets := []time.Duration{}
 		if len(timestamps) > 0 {
@@ -63,11 +72,11 @@ func (e *Engine) Init(input [][]string, host string) error {
 			return fmt.Errorf(`failed to get time offsets; row: %d, data: %v`, i, item[2])
 		}
 		user := User{
-			meta: &Meta{
+			Meta: Meta{
 				Email: item[0],
 				Text:  item[1],
 			},
-			offsets: offsets,
+			Offsets: offsets,
 		}
 		data = append(data, user)
 	}
@@ -82,11 +91,11 @@ func (e Engine) Process() error {
 	log.Printf(`endpoint is: %s`, endpoint)
 	for _, data := range e.data {
 		cancel := make(chan struct{})
-		body, err := json.Marshal(data.meta)
+		body, err := json.Marshal(data.Meta)
 		if err != nil {
 			return fmt.Errorf(`failed to message: %s`, err)
 		}
-		for _, ts := range data.offsets {
+		for _, ts := range data.Offsets {
 			go e.notify(cancel, wg, ts, body, endpoint)
 		}
 	}

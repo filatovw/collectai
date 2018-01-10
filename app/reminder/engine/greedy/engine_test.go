@@ -1,6 +1,9 @@
 package greedy_test
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -27,7 +30,6 @@ func TestEngineCorrectInput(t *testing.T) {
 		err := engine.Init(input, host)
 		assert.NoError(t, err)
 		assert.Equal(t, expected, engine.Data())
-		t.Logf(`%#v`, engine.Data())
 	}
 	check([][]string{[]string{"me@mail.com", "message to me", "0s"}}, "localhost",
 		[]greedy.User{greedy.User{Offsets: []time.Duration{0}, Meta: greedy.Meta{Email: "me@mail.com", Text: "message to me"}}})
@@ -40,5 +42,75 @@ func TestEngineCorrectInput(t *testing.T) {
 }
 
 func TestEngineProcess(t *testing.T) {
+	check := func(input [][]string, expected int32) {
+		var (
+			counter int32
+			step    = int32(1)
+		)
 
+		ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			atomic.AddInt32(&counter, step)
+			assert.Equal(t, "/messages", r.URL.EscapedPath())
+			assert.Equal(t, http.MethodPost, r.Method)
+			w.WriteHeader(http.StatusCreated)
+			body := []byte("{}")
+			w.Write(body)
+		}))
+		defer ts.Close()
+		ts.Start()
+
+		engine := greedy.Engine{}
+		engine.Init(input, ts.URL)
+		err := engine.Process()
+		assert.NoError(t, err)
+		assert.Equal(t, expected, atomic.LoadInt32(&counter))
+	}
+
+	check([][]string{
+		[]string{"me@mail.com", "message to me", "0s"}}, int32(1))
+
+	check([][]string{
+		[]string{"me@mail.com", "message to me", "0s-10ms"},
+		[]string{"another@mail.com", "another message", "1ms-11ms-12ms"}}, int32(5))
+
+	check([][]string{
+		[]string{"me@mail.com", "message to me", "0s"},
+		[]string{"another@mail.com", "another message", "1ms"}}, int32(2))
+}
+
+func TestEngineProcessWithPaid(t *testing.T) {
+	check := func(input [][]string, expected int32) {
+		var (
+			counter int32
+			step    = int32(1)
+		)
+
+		ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			atomic.AddInt32(&counter, step)
+			assert.Equal(t, "/messages", r.URL.EscapedPath())
+			assert.Equal(t, http.MethodPost, r.Method)
+			w.WriteHeader(http.StatusCreated)
+			body := []byte(`{"paid": true}`)
+			w.Write(body)
+		}))
+		defer ts.Close()
+		ts.Start()
+
+		engine := greedy.Engine{}
+		engine.Init(input, ts.URL)
+		err := engine.Process()
+		assert.NoError(t, err)
+		assert.Equal(t, expected, atomic.LoadInt32(&counter))
+	}
+
+	check([][]string{
+		[]string{"me@mail.com", "message to me", "0s"}}, int32(1))
+
+	check([][]string{
+		[]string{"me@mail.com", "message to me", "0s-10ms"},
+		[]string{"another@mail.com", "another message", "1ms-11ms-12ms"}}, int32(2))
+
+	check([][]string{
+		[]string{"me@mail.com", "message to me", "0s"},
+		[]string{"another@mail.com", "another message", "1ms"}}, int32(2))
 }

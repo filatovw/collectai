@@ -87,15 +87,16 @@ func (e *Engine) Init(input [][]string, host string) error {
 // Process starts goroutines. One for each time offset.
 func (e Engine) Process() error {
 	wg := &sync.WaitGroup{}
-	endpoint := fmt.Sprintf("http://%s/messages", e.host)
+	endpoint := fmt.Sprintf("%s/messages", e.host)
 	log.Printf(`endpoint is: %s`, endpoint)
 	for _, data := range e.data {
 		cancel := make(chan struct{})
 		body, err := json.Marshal(data.Meta)
 		if err != nil {
-			return fmt.Errorf(`failed to message: %s`, err)
+			return fmt.Errorf(`failed to encode message: %s`, err)
 		}
 		for _, ts := range data.Offsets {
+			wg.Add(1)
 			go e.notify(cancel, wg, ts, body, endpoint)
 		}
 	}
@@ -104,7 +105,6 @@ func (e Engine) Process() error {
 }
 
 func (e Engine) notify(cancel chan struct{}, wg *sync.WaitGroup, ts time.Duration, body []byte, endpoint string) {
-	wg.Add(1)
 	defer wg.Done()
 	timer := time.NewTimer(ts)
 	select {

@@ -1,6 +1,8 @@
 APP = reminder
-VERSION = 
-REVISION = 
+PLATFORM ?= darwin
+VERSION?=?
+COMMIT=$(shell git rev-parse HEAD)
+LDFLAGS = -ldflags "-X main.Version=$(VERSION) -X main.Commit=$(COMMIT)"
 
 .PHONY: install
 install:
@@ -8,19 +10,12 @@ install:
 
 .PHONY: build
 build:
-	go build -o bin/darwin/$(APP) ./cmd/$(APP)
+	go build $(LDFLAGS) -o bin/$(PLATFORM)/$(APP) ./cmd/$(APP)
 
 .PHONY: test
-test: test-units test-integration
-
-.PHONY: test-units
-test-units:
-	go test -v ./...
-
-.PHONY: test-integration
-test-integration:
-	@echo "integration tests should start"
+test:
+	go test -v ./... -race
 
 .PHONY: clean
 clean:
-	rm bin/*
+	rm -rf bin/*

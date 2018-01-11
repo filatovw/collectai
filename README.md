@@ -20,10 +20,14 @@ In this case, the communication service's JSON encoded response body additionall
 After your service has sent out all messages terminate the commservice to get a report.
 
 
-# Develop and run
+# Develop
 
 All artifacts are placed inside `/bin/<platform>/` directory. Supported platforms are `darwin` and `linux`.
 
+
+## Install
+
+    make install
 
 ## How to build
 
@@ -31,16 +35,16 @@ All artifacts are placed inside `/bin/<platform>/` directory. Supported platform
 
 ## Run tests
 
-    make test-unit
-
-## Run intergration tests
-
-    make test-integration
-
-## Run all tests
-
     make test
 
 ## Clear environment
 
     make clean
+
+# Run
+
+start corresponding commservice and then execute built artefact:
+
+    ./commservice/commservice.mac
+
+    ./bin/darwin/reminder -commservice-host=http://localhost:9090 -schedule-path=./fixtures/customers.csv

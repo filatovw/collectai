@@ -1,6 +1,8 @@
 package pool
 
 /*
+	TODO:
+
 	get all time intervals
 	get all user data
 	create pull of goroitine workers

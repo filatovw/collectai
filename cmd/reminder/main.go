@@ -7,7 +7,13 @@ import (
 	"github.com/filatovw/collectai/app/reminder"
 )
 
+var (
+	Commit  = "unset"
+	Version = "unset"
+)
+
 func main() {
+	log.Printf("Version: %s, Commit: %s", Version, Commit)
 	// read configuration
 	conf, err := reminder.NewConf()
 	if err != nil {

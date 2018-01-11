@@ -31,6 +31,7 @@ func (c *Conf) ParseCLI() {
 	flag.StringVar(&conf.CommserviceHost, "commservice-host", "", "address of commservice [host]:[port].")
 	flag.StringVar(&conf.SchedulePath, "schedule-path", "", "path to schedule file CSV formatted")
 	flag.StringVar(&conf.Engine, "engine", "", "scheduler engine. Greedy(default) or Pool")
+
 	flag.Parse()
 
 	if conf.CommserviceHost != "" {
@@ -39,6 +40,7 @@ func (c *Conf) ParseCLI() {
 	if conf.SchedulePath != "" {
 		c.SchedulePath = conf.SchedulePath
 	}
+
 	if conf.Engine != "" {
 		c.Engine = conf.Engine
 	}

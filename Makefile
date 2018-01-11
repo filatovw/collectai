@@ -6,6 +6,7 @@ LDFLAGS = -ldflags "-X main.Version=$(VERSION) -X main.Commit=$(COMMIT)"
 
 .PHONY: install
 install:
+	dep ensure
 	go install ./...
 
 .PHONY: build

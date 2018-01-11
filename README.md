@@ -22,6 +22,12 @@ After your service has sent out all messages terminate the commservice to get a 
 
 # Develop
 
+Requiremets:
+
+    https://github.com/golang/dep
+
+For tests `testify/assert` framework is used.
+
 All artifacts are placed inside `/bin/<platform>/` directory. Supported platforms are `darwin` and `linux`.
 
 
